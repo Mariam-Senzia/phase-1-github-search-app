@@ -1,31 +1,70 @@
-const githubForm = document.getElementById("github-form")
+/**  
+   1.A user can enter github username
+   2.A user can see list of results based on username keyed in.
+   3.A user can click on user and search result
+   4.A user will be redirected to their github profile
+**/
 
-githubForm.addEventListener("submit", function(e) {
-    e.preventDefault();
+const repoList = document.getElementById("repos-list")
 
-    const submitSearch = document.getElementById("search").value;
+document.addEventListener("DOMContentLoaded", () => {
+    const search = document.getElementById("search")
+    const submit = document.getElementById("submit")
+    const usersList = document.getElementById("user-list")
 
-    fetch("https://api.github.com/users/"+submitSearch)
-    .then((response) => response.json())
-    .then((data) => {
-        console.log(data)
-        
-        document.getElementById("user-list").innerHTML = `
-        <a target="_blank" href="https://www.github.com/users/mojombo">${data.url}</a>
-        `
+    submit.addEventListener("click", (e) => {
+        e.preventDefault()
+        const username = search.value
+
+        ////Check if username is empty
+
+        if (username === "") {
+            alert("Github username is required")
+        }
+
+        ////make request to github API and fetch data
+        fetchGithubUsername("GET",{username: username})
     })
-    .then(repos())
-});
+    
+})
 
-const submit = document.getElementById("submit")
+const fetchGithubUsername = (method,data) => {
+    const usernameUrl = `https://api.github.com/search/users?q=${data.username}`
+    fetch(usernameUrl,{
+        header: {
+            "Accept": "application/vnd.github.v3+json"
+        }
+    })  
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error('API error')
+        }
 
-function repos() {
-submit.addEventListener("click", function (e){
-    fetch("https://api.github.com/users/mojombo/repos/")
-    .then((response) => response.json())
-    .then((data) => {
-        console.log(data)
-        document.getElementById("repos-list").innerHTML = data.repos_url
+        return response.json();
     })
-}) 
+    .then((users) => {
+        displayFoundUsers(users)
+    })
+    .catch((error) => {
+        console.log("Error in fetching data",error.message)
+        alert("An error occured")
+    })
+}
+
+const displayFoundUsers = (usersList) => {
+    //innerHTML
+    console.log(usersList)
+    repoList.innerHTML = ""
+
+    usersList.items.forEach((user) => { 
+    const li = document.createElement("li")
+    const githubLink = document.createElement("a")
+
+    githubLink.href = user.html_url
+    githubLink.target = "_blank"
+    githubLink.textContent = user.login
+    
+    li.appendChild(githubLink)
+    repoList.appendChild(li)
+})
 }
